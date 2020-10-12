@@ -1,4 +1,4 @@
-HOST = 'sanic-imdb.herokuapp.com'
+HOST = '34.196.141.188'
 PORT = '8000'
 DEBUG = True
 DB_URL = 'sqlite:///imdb.db?charset=utf8'
