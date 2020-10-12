@@ -72,16 +72,15 @@ def setup_routes(app, jinja, auth, response, data_base_session):
                                            popularity=request.form.get('popularity'),
                                            score=request.form.get('score'),
                                            director=remove_blank_space(request.form.get('director')))
-                data_base_session.add(new_movie_instance)
-                data_base_session.commit()
                 for genre_name in genre:
                     genre_instance = data_base_session.query(Genre).filter_by(
                         genre_name=remove_blank_space(genre_name)).first()
                     if not genre_instance:
                         genre_instance = Genre(genre_name=remove_blank_space(genre_name))
                         data_base_session.add(genre_instance)
-                        data_base_session.commit()
                     new_movie_instance.genre.append(genre_instance)
+                    data_base_session.add(new_movie_instance)
+                    data_base_session.commit()
                 movie_serializer = movie_schema.dump(new_movie_instance)
                 json_response.update({
                     'success': True,
@@ -94,7 +93,7 @@ def setup_routes(app, jinja, auth, response, data_base_session):
             genre = ",".join(request.form.pop('genre')).split(",")
             movie_obj = data_base_session.query(Movie).filter_by(movie_id=request.form.get('movie_id')).first()
             genre_obj_list = []
-            for genre_name  in genre:
+            for genre_name in genre:
                 genre_obj = data_base_session.query(Genre).filter_by(genre_name=remove_blank_space(genre_name)).first()
                 if not genre_obj:
                     genre_obj = Genre(genre_name=remove_blank_space(genre_name))
