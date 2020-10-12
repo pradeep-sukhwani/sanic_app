@@ -129,6 +129,6 @@ dmypy.json
 .pyre/
 
 imdb.db
-settings.py
+#settings.py
 .idea
 .pyc
