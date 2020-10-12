@@ -1,24 +1,10 @@
 import os
 import json
-
-from sanic import Sanic
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
-
-import settings
 from models import User, Movie, Genre
 from utils import get_hashed_password, remove_blank_space
 
 
-def load_data():
-    app = Sanic(__name__)
-    app.static('static', './static')
-    app.config.update_config(settings)
-    engine = create_engine(app.config.DB_URL, echo=True, connect_args={'check_same_thread': False},
-                           poolclass=StaticPool)
-    data_base_session = sessionmaker(bind=engine, autoflush=False)
-    data_base_session = data_base_session()
+def load_data(data_base_session, app):
     database_objects = []
     user_data = [
         {

@@ -6,6 +6,7 @@ from sanic_session import Session, InMemorySessionInterface
 from sqlalchemy import create_engine
 
 import settings
+from load_data import load_data
 from routes import setup_routes
 from models import Base
 from sqlalchemy.orm import sessionmaker
@@ -33,6 +34,7 @@ def run():
         'auth': auth,
         'response': response,
     }
+    load_data(data_base_session, app)
     setup_routes(**kwargs)
     app.run(
         host=app.config.HOST,
