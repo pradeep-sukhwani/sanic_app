@@ -1,0 +1,264 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="IMDB">
+    <meta name="author" content="Pradeep Sukhwani">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/static/img/favicon.ico"/>
+    <!-- CSS only -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.6.3/css/fontawesome.min.css">
+    <link rel="stylesheet" href="/static/css/custom.css">
+    <!-- JS, Popper.js, and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+            integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+            crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+            integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+            crossorigin="anonymous"></script>
+    <script type="application/javascript">
+        $(document).ready(function () {
+            $("#signInForm").on('submit', function (e) {
+                e.preventDefault()
+                let formData = $("#signInForm")
+                let serializeData = formData.serializeArray();
+                $.ajax({
+                    method: 'POST',
+                    url: '/login',
+                    data: serializeData,
+                    beforeSend: function () {
+                        $("#formSubmit").html('Please wait...')
+                        $('#formSubmit').prop("disabled", true);
+                        $('input:password').prop('readonly', true);
+                        $('#formSubmit').css("cursor", 'not-allowed');
+                        $('#loginModal').modal('show')
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            $(".successErrorText").html('<span class="text-success">Login Success</span>')
+                            window.location.replace("/");
+                        }
+                        $("#formSubmit").html('Login')
+                        $('#formSubmit').prop("disabled", false);
+                        $('input:password').prop('readonly', false);
+                        $('#formSubmit').css("cursor", 'pointer');
+                    },
+                    error: function (response) {
+                        const parsedJson = JSON.parse(response.responseText)
+                        console.log(parsedJson.message)
+                        $("#formSubmit").html('Login')
+                        $(".successErrorText").html('<span class="text-danger">' + parsedJson.message + '</span>')
+                        $('#formSubmit').prop("disabled", false);
+                        $('input:password').prop('readonly', false);
+                        $('#formSubmit').css("cursor", 'pointer');
+                    }
+                })
+            })
+            $("#logoutSubmit").on('click', function (e) {
+                e.preventDefault()
+                let formData = $("#signOutForm")
+                $.ajax({
+                    method: 'POST',
+                    url: '/logout',
+                    beforeSend: function () {
+                        $('#logoutSubmit').prop("disabled", true);
+                        $('#logoutSubmit').css("cursor", 'not-allowed');
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            $(".logoutSuccessErrorText").html('<span class="text-success">' + response.message + '</span>')
+                            window.location.replace("/");
+                        }
+                    },
+                    error: function (response) {
+                        $(".logoutSuccessErrorText").html('<span class="text-danger">' + response.message + '</span>')
+                        $('#logoutSubmit').prop("disabled", false);
+                        $('#logoutSubmit').css("cursor", 'pointer');
+                    }
+                })
+            })
+            $("#addMovieForm").on('submit', function (e) {
+                e.preventDefault()
+                let formData = $("#addMovieForm")
+                let serializeData = formData.serializeArray();
+                $.ajax({
+                    method: 'POST',
+                    url: '/movies',
+                    data: serializeData,
+                    beforeSend: function () {
+                        $("#addMovieSubmit").html('Please wait...')
+                        $('#addMovieSubmit').prop("disabled", true);
+                        $('input:text').prop('readonly', true);
+                        $('#addMovieSubmit').css("cursor", 'not-allowed');
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            $(".addMovieText").html('<span class="text-success">' + response.message + '</span>')
+                            window.location.replace("/");
+                        }
+                        $("#addMovieSubmit").html('Add')
+                        $('#addMovieSubmit').prop("disabled", false);
+                        $('input:text').prop('readonly', false);
+                        $('#addMovieSubmit').css("cursor", 'pointer');
+                    },
+                    error: function (response) {
+                        $(".addMovieText").html('<span class="text-danger">' + response.responseJSON.message + '</span>')
+                        $("#addMovieSubmit").html('Add')
+                        $('#addMovieSubmit').prop("disabled", false);
+                        $('input:text').prop('readonly', false);
+                        $('#addMovieSubmit').css("cursor", 'pointer');
+                    }
+                })
+            })
+        })
+    </script>
+    {% block external_css %}{% endblock %}
+    <title>{% block title %}{% endblock %} | IMDB</title>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo03"
+            aria-controls="navbarTogglerDemo03" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <a class="navbar-brand" href="/">
+        <svg style="height: 30px; width:30px;">
+            <image href="/static/img/logo.svg" style="height: 30px; width:30px;"/>
+        </svg>
+    </a>
+
+    <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
+        <form class="form-inline ml-auto" {% if user %} style="margin-left: 1420px !important;" {% endif %}>
+            {% if user %}
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Hi {{ user.name }},
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            {% if user.is_admin %}
+                                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#addMovieModal">+ Add a
+                                    movie</a>
+                            {% endif %}
+                            <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">Logout</a>
+                        </div>
+                    </li>
+                </ul>
+            {% else %}
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#loginModal">Login
+                </button>
+            {% endif %}
+        </form>
+    </div>
+    <div class="modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="loginModalLabel">Login</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" id="signInForm">
+                        <div class="form-group">
+                            <label class="font-weight-bold">Email <span class="text-danger">*</span></label>
+                            <input type="email" name="email" id="email" class="form-control"
+                                   placeholder="Enter valid email" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="font-weight-bold">Password <span class="text-danger">*</span></label>
+                            <input type="password" name="password" id="password" class="form-control"
+                                   placeholder="***********" required>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary" id="formSubmit">Login</button>
+                        </div>
+                        <div class="form-group successErrorText"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="logoutModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="logoutModalLabel">Logout</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" id="signOutForm">
+                        <div class="form-group">Are you sure want to logout?</div>
+                        <div class="form-group">
+                            <button type="button" class="btn btn-primary" id="logoutSubmit">Logout</button>
+                        </div>
+                        <div class="form-group logoutSuccessErrorText"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="addMovieModal" tabindex="-1" role="dialog" aria-labelledby="addMovieModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addMovieModalLabel">Add a Movie</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" id="addMovieForm">
+                        <div class="form-group">
+                            <label class="font-weight-bold">Movie Name <span class="text-danger">*</span></label>
+                            <input type="text" name="movie_name" id="movie_name" class="form-control"
+                                   placeholder="Enter movie Name" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="font-weight-bold">Director Name <span class="text-danger">*</span></label>
+                            <input type="text" name="director" id="director" class="form-control"
+                                   placeholder="Enter Director Name" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="font-weight-bold">Popularity <span class="text-danger">*</span> </label>
+                            <input type="number" step="0.01" value="1" min="1" name="popularity" id="popularity"
+                                   class="form-control"
+                                   placeholder="Enter Popularity Name" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="font-weight-bold">Imdb Score <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" value="1" min="1" name="score" id="score"
+                                   class="form-control"
+                                   placeholder="Enter Imdb Score" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="font-weight-bold">Genre <span class="text-danger">*</span></label>
+                            <input type="text" name="genre" id="genre" class="form-control"
+                                   placeholder="Enter Genre (Comma Separated if multiple)" required>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary" id="addMovieSubmit">Add</button>
+                        </div>
+                        <div class="form-group addMovieText"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+{% block body %}
+{% endblock %}
+
+{% block external_js %}
+{% endblock %}
+</body>
+</html>

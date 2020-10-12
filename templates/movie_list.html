@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+
+{% block body %}
+    <div class="container">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Movie Name</th>
+                <th>Popularity</th>
+                <th>Imdb Score</th>
+                <th>Director</th>
+                <th>Genre</th>
+                {% if user and user.is_admin %}
+                    <th>Actions</th>
+                {% endif %}
+            </tr>
+            </thead>
+            <tbody id="movieData"></tbody>
+        </table>
+    </div>
+    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Delete Movie</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" id="deleteForm">
+                        <input type="hidden" name="movie_id" id="movie_id">
+                        <div class="form-group">Are you sure want to delete this movie?</div>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-danger" id="deleteModalSubmit">Delete</button>
+                        </div>
+                        <div class="form-group deleteModalSuccessErrorText"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="editMovieModal" tabindex="-1" role="dialog" aria-labelledby="editMovieModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editMovieModalLabel">Add a Movie</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="patch" id="editForm">
+                        <input type="hidden" name="movie_id" id="editmovie_id" class="form-control">
+                        <div class="form-group">
+                            <label class="font-weight-bold">Movie Name <span class="text-danger">*</span></label>
+                            <input type="text" name="movie_name" id="editmovie_name" class="form-control"
+                                   placeholder="Enter movie Name" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="font-weight-bold">Director Name <span class="text-danger">*</span></label>
+                            <input type="text" name="director" id="editdirector" class="form-control"
+                                   placeholder="Enter Director Name" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="font-weight-bold">Popularity <span class="text-danger">*</span> </label>
+                            <input type="number" step="0.01" value="1" min="1" name="popularity" id="editpopularity"
+                                   class="form-control"
+                                   placeholder="Enter Popularity Name" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="font-weight-bold">Imdb Score <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" value="1" min="1" name="score" id="editscore"
+                                   class="form-control"
+                                   placeholder="Enter Imdb Score" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="font-weight-bold">Genre <span class="text-danger">*</span></label>
+                            <input type="text" name="genre" id="editgenre" class="form-control"
+                                   placeholder="Enter Genre (Comma Separated if multiple)" required>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary" id="editMovieSubmit">Save</button>
+                        </div>
+                        <div class="form-group editMovieText"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block external_js %}
+    <script type="application/javascript">
+        $(document).on("click", ".deleteMovie", function () {
+            $("#deleteModal").modal('show');
+             const movieId = $(this).attr('dataMovieId');
+             $('#movie_id').val(movieId);
+        });
+        $(document).on("click", ".editMovie", function () {
+            $("#editMovieModal").modal('show');
+             const thisObj = $(this);
+             const jsonData = JSON.parse(thisObj.attr('data-object'))
+             $('#editmovie_id').val(jsonData.movie_id);
+             $('#editmovie_name').val(jsonData.movie_name);
+             $('#editdirector').val(jsonData.director);
+             $('#editpopularity').val(jsonData.popularity);
+             $('#editscore').val(jsonData.score);
+             $('#editgenre').val(jsonData.genre);
+
+        });
+        $(document).ready(function () {
+            $("#deleteForm").submit(function (e){
+                e.preventDefault()
+                const formData = $("#deleteForm")
+                const serializeData = formData.serializeArray();
+                $.ajax({
+                    method: 'DELETE',
+                    url: '/movies',
+                    data: serializeData,
+                    beforeSend: function () {
+                        $("#deleteModalSubmit").html('Please wait...')
+                        $('#deleteModalSubmit').css("cursor", 'not-allowed');
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            $(".deleteModalSuccessErrorText").html('<span class="text-success">' + response.message + '</span>')
+                            window.location.replace("/");
+                        }
+                        $("#deleteModalSubmit").html('Delete')
+                        $('#deleteModalSubmit').css("cursor", 'pointer');
+                    },
+                    error: function (response) {
+                        $(".deleteModalSuccessErrorText").html('<span class="text-danger">' + response.responseJSON.message + '</span>')
+                        $("#deleteModalSubmit").html('Delete')
+                        $('#deleteModalSubmit').css("cursor", 'pointer');
+                    }
+                })
+            })
+            $("#editForm").submit(function (e){
+                e.preventDefault()
+                const formData = $("#editForm")
+                const serializeData = formData.serializeArray();
+                $.ajax({
+                    method: 'PATCH',
+                    url: '/movies',
+                    data: serializeData,
+                    beforeSend: function () {
+                        $("#editMovieSubmit").html('Please wait...')
+                        $('#editMovieSubmit').css("cursor", 'not-allowed');
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            $(".editMovieText").html('<span class="text-success">' + response.message + '</span>')
+                            window.location.replace("/");
+                        }
+                        $("#editMovieSubmit").html('Save')
+                        $('#editMovieSubmit').css("cursor", 'pointer');
+                    },
+                    error: function (response) {
+                        $(".editMovieText").html('<span class="text-danger">' + response.responseJSON.message + '</span>')
+                        $("#editMovieSubmit").html('Save')
+                        $('#editMovieSubmit').css("cursor", 'pointer');
+                    }
+                })
+            })
+            $.ajax({
+                url: '/movies',
+                beforeSend: function () {
+                    $('#movieData').html('<tr><td align="center" colspan="{% if user and user.is_admin %}6 {% else %}5{% endif %}">Gathering Data...</td></tr>')
+                },
+                success: function (response) {
+                    let tableRow = ''
+                    if (response.success) {
+                        for (let i = 0; i < response.message.length; i++) {
+                            currentRow = response.message[i]
+                            tableRow += "<tr><td>" + currentRow.movie_name + "</td><td>" + (currentRow.popularity).toFixed(1).toString() + "</td><td>" + (currentRow.score).toFixed(1).toString() + "</td><td>" + currentRow.director + "</td>"
+                            genreList = []
+                            for (let j = 0; j < currentRow.genre.length; j++) {
+                                genreList.push(currentRow.genre[j].genre_name)
+                            }
+                            const jsonParse = JSON.stringify({
+                                movie_id: currentRow.movie_id,
+                                movie_name: currentRow.movie_name,
+                                popularity: currentRow.popularity,
+                                score: currentRow.score,
+                                director:currentRow.director,
+                                genre: genreList.join(', ')
+                            })
+                            tableRow += "<td>" + genreList.join(', ') + "</td>";
+                            tableRow += "{% if user and user.is_admin %}<td style='width: 113px;'><a href='#' data-object='" + jsonParse + "' class='editMovie'>Edit</a> | <a href='#' dataMovieId=" + (currentRow.movie_id).toString() + " class='deleteMovie'>Delete</a></td>{% endif %}"
+                            {#tableRow += "<td style='width: 113px;' {% if user and user.is_admin %}{% endif %}></td></tr>"#}
+                        }
+                        $("#movieData").html(tableRow)
+                    }
+                },
+                error: function (response) {
+                    console.log(response.message)
+                }
+            })
+        })
+    </script>
+{% endblock %}
